@@ -1,21 +1,6 @@
-@import 'tailwindcss';
-
-/* Green and beige: Pantone-style #374F4F (pine) and #DACCC4 (sand). */
-@theme {
-  --color-cream: #f4eee9;
-  --color-sand: #daccc4;
-  --color-pine: #374f4f;
-  --color-ink: #2a3433;
-  --color-muted: #6c7472;
-  --color-line: #e2d7cf;
-  --color-sage: #6f8f86;
-  --color-sky: #9fb6b4;
-  --color-sun: #d9b26a;
-  --color-clay: #c07c62;
-  --color-navy: #1e2f5a;
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-brand: 'Pacifico', 'Brush Script MT', cursive;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 body {
   @apply bg-cream text-ink antialiased;

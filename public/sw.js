@@ -3,7 +3,7 @@
 // Built assets (hashed file names): cache first.
 // Map and place lookups go straight to the network.
 
-const CACHE = 'bubdub-atlas-v1'
+const CACHE = 'bubdub-atlas-v2'
 const SHELL = ['/', '/manifest.webmanifest', '/favicon.svg', '/icons/icon-192.png', '/icons/icon-512.png']
 
 self.addEventListener('install', (event) => {
@@ -23,6 +23,8 @@ self.addEventListener('fetch', (event) => {
   const req = event.request
   const url = new URL(req.url)
   if (req.method !== 'GET' || url.origin !== self.location.origin) return
+  // Android app verification (assetlinks.json) must always come from the server.
+  if (url.pathname.startsWith('/.well-known/')) return
 
   if (req.mode === 'navigate') {
     event.respondWith(

@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.onrender.bubdub_s_atlas.twa",
+    "sha256_cert_fingerprints": ["ED:CB:74:4F:71:23:62:01:F3:DD:90:30:85:06:B8:A1:88:CF:96:2E:02:FE:95:54:65:C9:E9:89:A4:5D:61:BD"]
+  }
+}]
