@@ -57,6 +57,10 @@ The budget (`src/engine/budget.ts`) adds up transport, stays, food and local tra
 - **Share on WhatsApp** opens WhatsApp with the plan filled in.
 - **Copy link** makes a read-only link that carries the whole trip in the URL, so no server is needed. Opening it plans the same trip again.
 
+## Install as an app (PWA)
+
+The site is an installable web app: `public/manifest.webmanifest` (name, colours, icons), icons in `public/icons/` (normal and maskable, 192 and 512 px), and a small service worker in `public/sw.js`, registered only in production builds. To make an Android app, run the deployed URL through [PWABuilder](https://www.pwabuilder.com) and download the Android package.
+
 ## Project layout
 
 ```

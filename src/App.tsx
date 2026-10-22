@@ -6,6 +6,7 @@ import { PlanView, type PlanEditor } from './ui/PlanView'
 import { TripForm } from './ui/TripForm'
 
 const shared = readShareLink(location.hash)
+const YEAR = new Date().getFullYear()
 
 /** Which lookups a form needs: replanning without a new lookup is instant. */
 const placesKey = (f: FormState) => JSON.stringify([f.from.name.trim(), f.stops.map((s) => s.name.trim()), pickedPlaces(f)])
@@ -132,7 +133,7 @@ export default function App() {
         )}
       </main>
       <footer className="border-t border-line py-6 text-center text-xs text-muted">
-        © {new Date().getFullYear()} Maheeesh. Somewhere starts here.
+        © {YEAR} Maheeesh. Somewhere starts here.
       </footer>
     </div>
   )
