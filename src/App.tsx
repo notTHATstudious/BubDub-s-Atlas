@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { customPlaceId, daySignature, planTrip, type DayEdit, type TripPlan } from './engine'
-import { resolveTrip, type LiveResolved } from './live'
+import type { LiveResolved } from './live'
+import { lookUpTrip, PlanError } from './ui/lookup'
 import { emptyForm, loadForm, pickedPlaces, readShareLink, saveForm, shareLink, toInput, type FormState } from './ui/form'
+import { formatDate } from './engine/dates'
+import { SavedTrips } from './ui/SavedTrips'
+import { newTripId, saveTrip, type SavedTrip } from './ui/store'
 import { PlanView, type PlanEditor } from './ui/PlanView'
 import { TripForm } from './ui/TripForm'
 
@@ -9,7 +13,22 @@ const shared = readShareLink(location.hash)
 const YEAR = new Date().getFullYear()
 
 /** Which lookups a form needs: replanning without a new lookup is instant. */
-const placesKey = (f: FormState) => JSON.stringify([f.from.name.trim(), f.stops.map((s) => s.name.trim()), pickedPlaces(f)])
+const placesKey = (f: FormState, online: boolean) => JSON.stringify([online, f.from.name.trim(), f.stops.map((s) => s.name.trim()), pickedPlaces(f)])
+
+/** Follows the browser's online / offline state. */
+function useOnline(): boolean {
+  const [online, setOnline] = useState(() => navigator.onLine)
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine)
+    window.addEventListener('online', update)
+    window.addEventListener('offline', update)
+    return () => {
+      window.removeEventListener('online', update)
+      window.removeEventListener('offline', update)
+    }
+  }, [])
+  return online
+}
 
 export default function App() {
   const [form, setForm] = useState<FormState>(() => shared?.form ?? loadForm() ?? emptyForm())
@@ -20,6 +39,41 @@ export default function App() {
   const [loading, setLoading] = useState(!!shared)
   const resolved = useRef<{ key: string; data: LiveResolved }>(undefined)
   const top = useRef<HTMLDivElement>(null)
+  const online = useOnline()
+  const [savedId, setSavedId] = useState<string>()
+  const [saveFailed, setSaveFailed] = useState(false)
+
+  /** Writes the open plan to the phone; `id` is the saved copy to update. */
+  function store(id: string): boolean {
+    if (!plan || !resolved.current) return false
+    const names = plan.route.filter((r, i, all) => !r.transit && all.findIndex((x) => x.id === r.id) === i).map((r) => r.name)
+    return saveTrip({
+      id,
+      savedAt: Date.now(),
+      label: `${names.join(' & ') || plan.title} from ${plan.outbound.from}`,
+      dates: `${formatDate(plan.startDate)} – ${formatDate(plan.endDate)}`,
+      form,
+      edits,
+      resolved: resolved.current.data,
+    })
+  }
+
+  // Once saved, edits keep the saved copy current.
+  useEffect(() => {
+    if (savedId) store(savedId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan, edits])
+
+  function openSaved(t: SavedTrip) {
+    resolved.current = { key: placesKey(t.form, navigator.onLine), data: t.resolved }
+    setForm(t.form)
+    setEdits(t.edits)
+    setEditing(false)
+    setError(undefined)
+    setSavedId(t.id)
+    setPlan(build(t.form, t.resolved))
+    top.current?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   useEffect(() => saveForm(form), [form])
 
@@ -33,14 +87,16 @@ export default function App() {
     setLoading(true)
     setError(undefined)
     try {
-      const key = placesKey(f)
+      const isOnline = navigator.onLine
+      const key = placesKey(f, isOnline)
       if (resolved.current?.key !== key) {
-        resolved.current = { key, data: await resolveTrip(toInput(f), pickedPlaces(f)) }
+        resolved.current = { key, data: await lookUpTrip(toInput(f), pickedPlaces(f), isOnline) }
       }
       setPlan(build(f, resolved.current.data))
       top.current?.scrollIntoView({ behavior: 'smooth' })
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setPlan(undefined)
+      setError(err instanceof PlanError ? err.message : `Something went wrong: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setLoading(false)
     }
@@ -89,6 +145,11 @@ export default function App() {
   return (
     <div ref={top} className="min-h-screen">
       <main className="mx-auto max-w-2xl px-4 pb-16 pt-8 sm:pt-14">
+        {!online && (
+          <p role="status" className="mb-5 rounded-2xl border border-sun/50 bg-sun/15 px-4 py-3 text-sm leading-relaxed">
+            <b>You're offline.</b> You can open your saved trips, or plan hand-checked places (like Lonavala, Manali or Goa) and places you've planned before. Search links need the internet.
+          </p>
+        )}
         <header className="mb-7 text-center">
           <h1 className="font-brand text-4xl leading-tight text-navy sm:text-5xl">BubDub's Atlas</h1>
           {!plan && <p className="mt-2 text-sm text-muted">A practical day-by-day trip plan for anywhere, in a few seconds.</p>}
@@ -111,7 +172,17 @@ export default function App() {
               setEdits({})
               void makePlan(next)
             }}
+            saved={!!savedId}
+            saveFailed={saveFailed}
+            onSave={() => {
+              const id = newTripId()
+              const ok = store(id)
+              setSaveFailed(!ok)
+              if (ok) setSavedId(id)
+            }}
             onNew={() => {
+              setSavedId(undefined)
+              setSaveFailed(false)
               setForm(emptyForm())
               setEdits({})
               setEditing(false)
@@ -125,9 +196,14 @@ export default function App() {
             ) : (
               <TripForm value={form} onChange={setForm} onSubmit={() => void makePlan()} loading={loading} />
             )}
-            {error && <p className="mt-4 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">Something went wrong: {error}</p>}
+            {error && (
+              <p role="alert" className="mt-4 rounded-2xl border border-clay/30 bg-clay/10 px-4 py-3 text-sm leading-relaxed text-ink">
+                {error}
+              </p>
+            )}
+            <SavedTrips onOpen={openSaved} />
             <p className="mt-6 text-center text-xs leading-relaxed text-muted">
-              Places come from OpenStreetMap and Wikipedia, with hand-checked notes for popular spots. Travel times are rough estimates.
+              Places from © OpenStreetMap contributors and Wikipedia. Travel times and prices are rough estimates.
             </p>
           </>
         )}

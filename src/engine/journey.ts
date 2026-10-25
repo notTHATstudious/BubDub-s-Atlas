@@ -62,6 +62,30 @@ export function estimateMode(from: Coords, dest: Destination, mode: Mode): Journ
   }
 }
 
+const MODE_NOUN: Record<Mode, string> = { train: 'trains', bus: 'buses', flight: 'flights', car: 'road travel' }
+
+/**
+ * Why a mode the person asked for can't be used for this trip, in words.
+ * Mirrors the limits in estimateMode.
+ */
+export function unavailableReason(from: Coords | undefined, fromName: string, dest: Destination, mode: Mode): string {
+  if (!from) return `we couldn't place ${fromName} on the map, so we can't compare ${MODE_NOUN[mode]}`
+  const km = Math.round(roadKm(from, dest.coords) / 10) * 10
+  const air = straightKm(from, dest.coords)
+  switch (mode) {
+    case 'train':
+      return `we don't know a useful railway station near ${dest.name}`
+    case 'bus':
+      return `it's about ${km.toLocaleString('en-IN')} km by road, too far for a bus to make sense`
+    case 'car':
+      return `it's about ${km.toLocaleString('en-IN')} km by road, too far to drive in a trip like this`
+    case 'flight':
+      if (!dest.access.airport) return `there's no airport within easy reach of ${dest.name}`
+      if (air < 350) return `${fromName} and ${dest.name} are only about ${km} km apart by road, too close for a flight to save time`
+      return `no flight route fits this trip`
+  }
+}
+
 export function estimateAll(from: Coords, dest: Destination): JourneyEstimate[] {
   const modes: Mode[] = ['train', 'bus', 'flight', 'car']
   return modes.map((m) => estimateMode(from, dest, m)).filter((e): e is JourneyEstimate => !!e)

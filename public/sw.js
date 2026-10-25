@@ -3,7 +3,7 @@
 // Built assets (hashed file names): cache first.
 // Map and place lookups go straight to the network.
 
-const CACHE = 'bubdub-atlas-v2'
+const CACHE = 'bubdub-atlas-v4'
 const SHELL = ['/', '/manifest.webmanifest', '/favicon.svg', '/icons/icon-192.png', '/icons/icon-512.png']
 
 self.addEventListener('install', (event) => {

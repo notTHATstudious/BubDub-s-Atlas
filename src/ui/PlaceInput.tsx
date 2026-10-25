@@ -70,7 +70,7 @@ export function PlaceInput({ label, value, onChange, known, placeholder, autoFoc
         <span className="mb-1 block text-xs font-medium text-muted">{label}</span>
         <div className="flex items-center gap-1 rounded-xl border border-line bg-white focus-within:border-pine">
           <input
-            className="w-full bg-transparent px-3 py-2.5 text-[15px] outline-none placeholder:text-muted/60"
+            className="w-full bg-transparent px-3 py-2.5 text-base outline-none placeholder:text-muted/60"
             value={value}
             placeholder={placeholder}
             autoFocus={autoFocus}

@@ -77,6 +77,15 @@ export function pickedPlaces(f: FormState): Record<string, GeoResult> {
   return out
 }
 
+export const MAX_TRAVELLERS = 30
+
+/** The traveller count typed so far, or undefined while it isn't a valid number yet. */
+export function parseTravellers(text: string): number | undefined {
+  if (!/^\d+$/.test(text.trim())) return undefined
+  const n = Number(text)
+  return n >= 1 && n <= MAX_TRAVELLERS ? n : undefined
+}
+
 export function validate(f: FormState): string | undefined {
   if (!f.from.name.trim()) return 'Where are you starting from?'
   if (!f.stops.some((s) => s.name.trim())) return 'Add at least one destination.'
@@ -85,12 +94,13 @@ export function validate(f: FormState): string | undefined {
   return undefined
 }
 
-// Remember the last trip in this browser, so a refresh doesn't lose it.
+// Remember the trip for this visit only (sessionStorage), so a refresh while
+// planning keeps it but opening the app again starts with a blank form.
 const KEY = 'trip-planner:form'
 
 export function loadForm(): FormState | undefined {
   try {
-    const raw = localStorage.getItem(KEY)
+    const raw = sessionStorage.getItem(KEY)
     if (!raw) return undefined
     const f = { ...emptyForm(), ...JSON.parse(raw) } as FormState
     // Old dates are no use; keep the places and the trip length.
@@ -107,7 +117,7 @@ export function loadForm(): FormState | undefined {
 
 export function saveForm(f: FormState) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(f))
+    sessionStorage.setItem(KEY, JSON.stringify(f))
   } catch {
     // Private mode or storage full: nothing to do.
   }

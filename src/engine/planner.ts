@@ -1,4 +1,4 @@
-import type { Destination, Gateway, Interest, Month, Place } from '../data/types'
+import type { Coords, Destination, Gateway, Interest, Month, Place } from '../data/types'
 import { addDays, daysBetween, formatDate, formatHour, formatMonths, isValidDate, monthName, monthOf, parseTime } from './dates'
 import { findDestinationById, getDestination, roadKm, type Origin } from './geo'
 import {
@@ -7,6 +7,8 @@ import {
   estimateAll,
   MODE_LABEL,
   pickPlanningMode,
+  unavailableReason,
+  type Mode,
   type JourneyEstimate,
   type TransportPref,
   type TravelStyle,
@@ -22,6 +24,14 @@ const FULL_DAY_HOURS = 8 // leaves room for meals, rest and delays
 const LIGHT_DAY_HOURS = 4 // after an overnight journey
 const TRANSFER_START = 8 // leave for the next stop around 8:00
 const HIGH_ALTITUDE_M = 3000
+const PREF_NOUN: Record<Mode, string> = { train: 'trains', bus: 'buses', flight: 'flights', car: 'road travel' }
+
+/** A gateway leg (Manali → Spiti) is driven whatever the person prefers. */
+function firstLegIsRoadOnly(dest: Destination, est: JourneyEstimate | undefined): boolean {
+  return est?.mode === 'car' && !!dest.gateways?.length
+}
+/** Share of a day's meals eaten at the destination, by day type. */
+const FOOD_DAY_SHARE: Record<DayType, number> = { travel: 0.5, arrival: 0.75, explore: 1, free: 1, daytrip: 1, transfer: 1, return: 0.75 }
 const MAX_PLACES_PER_DAY = 4
 const MAX_OUTINGS_PER_DAY = 3
 const HOP_HOURS = 0.25 // between places on the same outing
@@ -261,6 +271,7 @@ function toPlanned(c: Candidate, dest: Destination, enRoute = false): PlannedSto
     fromBaseHours: c.place.fromBaseHours,
     visitHours: c.place.visitHours,
     note: c.place.note,
+    kind: c.custom ? undefined : c.place.kind,
     custom: c.custom || undefined,
     enRoute: enRoute || undefined,
   }
@@ -412,6 +423,14 @@ export function planTrip(input: TripInput, resolved: ResolvedTrip): TripPlan {
   } else {
     outEstimate = pickPlanningMode(journeyOptions(origin, firstNode.dest), style, pref)
   }
+  // Say plainly when the transport the person asked for doesn't work here.
+  const prefNote = (est: JourneyEstimate | undefined, from: Coords | undefined, fromName: string, dest: Destination, legName: string) => {
+    if (pref === 'any' || est?.mode === pref) return
+    const why = firstLegIsRoadOnly(dest, est) ? `${dest.name} is reached by road from ${fromName}` : unavailableReason(from, fromName, dest, pref)
+    const instead = est ? ` The ${legName} is planned ${est.mode === 'car' ? 'by road' : `by ${MODE_LABEL[est.mode]}`} instead.` : ''
+    warnings.push({ level: 'caution', text: `You asked for ${PREF_NOUN[pref]}, but ${why}.${instead}` })
+  }
+  prefNote(outEstimate, origin.coords, origin.name, firstNode.dest, 'journey there')
   const givenDepart = parseTime(input.departTime)
   const departHour = givenDepart ?? (outEstimate ? defaultDepartHour(outEstimate) : 7)
   const arrivalAbs = departHour + (outEstimate?.hours ?? 4)
@@ -474,6 +493,7 @@ export function planTrip(input: TripInput, resolved: ResolvedTrip): TripPlan {
     const home = findDestinationById(returnTo.id)
     inEstimate = pickPlanningMode(home ? journeyOptions(lastNode.dest, home) : journeyOptions(returnTo, lastNode.dest), style, pref)
   }
+  if (lastNode.dest.id !== firstNode.dest.id || returnTo.id !== origin.id) prefNote(inEstimate, returnTo.coords, returnTo.name, lastNode.dest, 'journey back')
   const givenReturn = parseTime(input.returnTime)
   const returnHour = givenReturn ?? (inEstimate ? defaultReturnHour(inEstimate) : 15)
 
@@ -706,13 +726,19 @@ export function planTrip(input: TripInput, resolved: ResolvedTrip): TripPlan {
   const travellers = Math.max(1, input.travellers ?? 2)
   outbound.options = legOptions({ home: origin, dest: firstNode.dest, chosen: outEstimate, outbound: true, date: input.departDate, style, travellers })
   inbound.options = legOptions({ home: returnTo, dest: lastNode.dest, chosen: inEstimate, outbound: false, date: input.returnDate, style, travellers })
+  if (pref !== 'any') {
+    for (const o of [...outbound.options, ...inbound.options]) if (o.recommended && o.mode === pref) o.why = 'Your preferred transport.'
+  }
   const budget = feasible
     ? estimateBudget({
         style,
         travellers,
         nights: nights.reduce((a, b) => a + b, 0),
-        days: totalDays,
-        outingDays: dayPlans.filter((p) => p.stops.some((x) => !x.enRoute)).length,
+        foodDays: dayPlans.reduce((sum, p) => sum + FOOD_DAY_SHARE[p.type], 0),
+        outings: dayPlans
+          .map((p) => p.stops.filter((x) => !x.enRoute))
+          .filter((ps) => ps.length > 0)
+          .map((ps) => ({ farthestHours: Math.max(...ps.map((x) => x.fromBaseHours)), kinds: ps.flatMap((x) => (x.kind ? [x.kind] : [])) })),
         transferHours: route.slice(1).reduce((h, n) => h + (n.legIn ?? 0), 0),
         outbound: outbound.options.find((o) => o.recommended),
         inbound: inbound.options.find((o) => o.recommended),

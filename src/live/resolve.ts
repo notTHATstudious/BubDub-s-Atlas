@@ -94,14 +94,14 @@ export async function resolveTrip(input: TripInput, picked: Record<string, GeoRe
       try {
         const geo = picked[name] ?? (await geocode(name, 1))[0]
         if (!geo) {
-          notices.push({ level: 'caution', text: `We couldn't find "${name}" on the map. Check the spelling, or add places yourself.` })
+          notices.push({ level: 'caution', text: `We couldn't find "${name}" on the map. Check the spelling, or pick it from the suggestions as you type.` })
           return placeholderDestination(name)
         }
         const live = await buildLiveDestination(geo)
         notices.push(...live.notices)
         return live.dest
       } catch {
-        notices.push({ level: 'caution', text: `Couldn't look up "${name}" right now (no connection?). Add places yourself or try again.` })
+        notices.push({ level: 'caution', text: `Couldn't look up "${name}" right now. Check your internet connection and try again.` })
         return placeholderDestination(name)
       }
     }),

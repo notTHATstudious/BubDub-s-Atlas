@@ -48,7 +48,13 @@ Live flight and train schedules and fares need paid APIs (and a server to keep t
 - suggests one option for your travel style, and times the days around it;
 - links each option to a pre-filled search on Google Flights, Skyscanner, IRCTC, redBus, Google Maps or Rome2Rio, where you see actual times and prices.
 
-The budget (`src/engine/budget.ts`) adds up transport, stays, food and local travel from typical Indian prices for the chosen style, shown as a range.
+The budget (`src/engine/budget.ts`) adds up transport, stays, food, local travel and entry fees from typical Indian prices for the chosen style, shown as a range. Food counts partial days on travel days, local travel is priced by the actual outing distance, and entry fees by the kind of place (temples free, ASI monuments ₹25–40). The basis is noted in the file and on the page.
+
+If you prefer a transport mode (Train, Bus, Flight, Road), the plan uses it wherever it works. When it doesn't, the plan says why (for example, too far for a bus or too close to fly) and what it used instead.
+
+## Offline
+
+With no connection, the app shows an offline notice and only plans the hand-checked destinations, labelled as planned offline. Any other place is refused with a clear message instead of an empty, made-up plan. The form starts blank each time the app is opened (it's kept only for the current visit).
 
 ## Editing and sharing
 

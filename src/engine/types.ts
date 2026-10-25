@@ -1,4 +1,4 @@
-import type { Destination, Interest, Place } from '../data/types'
+import type { Destination, Interest, Place, PlaceKind } from '../data/types'
 import type { JourneyEstimate, TransportPref, TravelStyle } from './journey'
 import type { Origin } from './geo'
 import type { Budget } from './budget'
@@ -52,6 +52,8 @@ export interface PlannedStop {
   fromBaseHours: number
   visitHours: number
   note?: string
+  /** What sort of place it is; custom places have none. */
+  kind?: PlaceKind
   custom?: boolean
   /** Visited on the road between two stops. */
   enRoute?: boolean

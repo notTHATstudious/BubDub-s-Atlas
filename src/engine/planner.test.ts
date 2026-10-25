@@ -185,4 +185,44 @@ describe('planTrip', () => {
     expect(planToText(p, {}, 'itinerary')).not.toMatch(/GOING/)
     expect(whatsappLink('a b')).toBe('https://wa.me/?text=a%20b')
   })
+
+  it('keeps a weekend budget realistic (Lonavala, 2 days)', () => {
+    const base = { from: 'Mumbai', stops: ['Lonavala'], departDate: '2026-11-07', returnDate: '2026-11-08', travellers: 2 }
+    const pp = (style: 'budget' | 'balanced' | 'premium') => plan({ ...base, style }).budget!.perPerson
+    const balanced = pp('balanced')
+    expect(balanced[0]).toBeGreaterThanOrEqual(1500)
+    expect(balanced[1]).toBeLessThanOrEqual(6000)
+    expect(pp('budget')[1]).toBeLessThan(balanced[1])
+    expect(pp('premium')[0]).toBeGreaterThan(balanced[0])
+    const b = plan(base).budget!
+    expect(b.basis).toMatch(/Not live prices/)
+    // Every line is rounded to ₹100.
+    expect(b.lines.every((l) => l.range[0] % 100 === 0)).toBe(true)
+  })
+
+  it('scales the budget with the traveller count', () => {
+    const base = { from: 'Mumbai', stops: ['Lonavala'], departDate: '2026-11-07', returnDate: '2026-11-08' }
+    const two = plan({ ...base, travellers: 2 }).budget!
+    const five = plan({ ...base, travellers: 5 }).budget!
+    expect(five.travellers).toBe(5)
+    expect(five.total[0]).toBeGreaterThan(two.total[0])
+    expect(five.lines.find((l) => l.label === 'Stays')!.detail).toMatch(/3 rooms/)
+    expect(five.lines.find((l) => l.label === 'Getting there and back')!.detail).toMatch(/5 people/)
+  })
+
+  it('plans around the preferred transport, or says specifically why not', () => {
+    const base = { from: 'Mumbai', stops: ['Manali'], departDate: '2026-07-07', returnDate: '2026-07-14' }
+    const train = plan({ ...base, transport: 'train' })
+    expect(train.outbound.estimate?.mode).toBe('train')
+    expect(train.inbound.estimate?.mode).toBe('train')
+    expect(train.outbound.options![0]).toMatchObject({ mode: 'train', recommended: true, why: 'Your preferred transport.' })
+    expect(train.warnings.some((w) => /asked for/.test(w.text))).toBe(false)
+
+    const bus = plan({ ...base, transport: 'bus' })
+    expect(bus.outbound.estimate?.mode).not.toBe('bus')
+    expect(bus.warnings.find((w) => /asked for buses/.test(w.text))?.text).toMatch(/km by road, too far for a bus/)
+
+    const flight = plan({ from: 'Pune', stops: ['Lonavala'], departDate: '2026-07-07', returnDate: '2026-07-08', transport: 'flight' })
+    expect(flight.warnings.find((w) => /asked for flights/.test(w.text))?.text).toMatch(/too close for a flight/)
+  })
 })

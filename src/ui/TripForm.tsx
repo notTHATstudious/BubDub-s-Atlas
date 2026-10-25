@@ -3,7 +3,7 @@ import { INTERESTS, type Interest } from '../data/types'
 import { knownPlaceNames, type TransportPref, type TravelStyle } from '../engine'
 import { daysBetween } from '../engine/dates'
 import type { FormState } from './form'
-import { validate } from './form'
+import { MAX_TRAVELLERS, parseTravellers, validate } from './form'
 import { PlaceInput } from './PlaceInput'
 
 interface Props {
@@ -39,7 +39,7 @@ const INTEREST_LABEL: Record<Interest, string> = {
   relaxation: 'Relaxing',
 }
 
-const field = 'w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[15px] outline-none focus:border-pine'
+const field = 'w-full rounded-xl border border-line bg-white px-3 py-2.5 text-base outline-none focus:border-pine'
 
 function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
   return (
@@ -48,6 +48,36 @@ function Field({ label, children, hint }: { label: string; children: ReactNode; 
       {children}
       {hint && <span className="mt-1 block text-xs text-muted">{hint}</span>}
     </label>
+  )
+}
+
+/**
+ * Lets the field be cleared and retyped (the old version snapped back to 1),
+ * with − and + buttons for phones.
+ */
+function TravellersInput({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  const [draft, setDraft] = useState<string>()
+  const step = (d: number) => onChange(Math.min(MAX_TRAVELLERS, Math.max(1, value + d)))
+  const btn = 'h-11 w-11 shrink-0 rounded-xl border border-line bg-white text-lg text-pine disabled:opacity-40'
+  return (
+    <div className="flex items-center gap-2">
+      <button type="button" className={btn} onClick={() => step(-1)} disabled={value <= 1} aria-label="One less traveller">−</button>
+      <input
+        inputMode="numeric"
+        pattern="[0-9]*"
+        aria-label="Travellers"
+        className={`${field} text-center`}
+        value={draft ?? String(value)}
+        onFocus={() => setDraft(String(value))}
+        onChange={(e) => {
+          setDraft(e.target.value)
+          const n = parseTravellers(e.target.value)
+          if (n !== undefined) onChange(n)
+        }}
+        onBlur={() => setDraft(undefined)}
+      />
+      <button type="button" className={btn} onClick={() => step(1)} disabled={value >= MAX_TRAVELLERS} aria-label="One more traveller">+</button>
+    </div>
   )
 }
 
@@ -127,7 +157,7 @@ export function TripForm({ value: f, onChange, onSubmit, loading }: Props) {
           <div className="mt-4 space-y-4 rounded-2xl bg-cream/70 p-4">
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Travellers">
-                <input type="number" min={1} max={30} className={field} value={f.travellers} onChange={(e) => set({ travellers: Math.max(1, Number(e.target.value) || 1) })} />
+                <TravellersInput value={f.travellers} onChange={(travellers) => set({ travellers })} />
               </Field>
               <Field label="Leave home at" hint="Optional">
                 <input type="time" className={field} value={f.departTime} onChange={(e) => set({ departTime: e.target.value })} />
@@ -171,7 +201,7 @@ export function TripForm({ value: f, onChange, onSubmit, loading }: Props) {
 
       {error && <p className="rounded-xl bg-clay/10 px-3 py-2 text-sm text-clay">{error}</p>}
 
-      <button disabled={loading} className="w-full rounded-2xl bg-pine py-3.5 text-[15px] font-semibold text-cream transition hover:bg-pine/90 disabled:opacity-60">
+      <button disabled={loading} className="w-full rounded-2xl bg-pine py-3.5 text-base font-semibold text-cream transition hover:bg-pine/90 disabled:opacity-60">
         {loading ? 'Finding places and planning…' : 'Plan my trip'}
       </button>
     </form>

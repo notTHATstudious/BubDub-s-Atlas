@@ -60,7 +60,7 @@ function PlaceRow({ p, faded, ed, moveTo, optional }: { p: PlannedStop; faded?: 
               </button>
             )}
             {moveTo.length > 0 && (
-              <select aria-label={`Move ${p.name} to another day`} className={iconBtn} value="" onChange={(e) => e.target.value && ed.move(p.placeId, Number(e.target.value))}>
+              <select aria-label={`Move ${p.name} to another day`} className={`${iconBtn} text-base`} value="" onChange={(e) => e.target.value && ed.move(p.placeId, Number(e.target.value))}>
                 <option value="">Move to…</option>
                 {moveTo.map((d) => (
                   <option key={d.day} value={d.day}>Day {d.day}</option>
@@ -86,8 +86,8 @@ function DayText({ d, ed }: { d: DayPlan; ed: PlanEditor }) {
   if (ed.editing && open) {
     return (
       <div className="mt-2 space-y-2">
-        <input className="w-full rounded-xl border border-line px-3 py-2 text-[15px] font-semibold outline-none focus:border-pine" value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Day title" />
-        <textarea rows={3} className="w-full rounded-xl border border-line px-3 py-2 text-[15px] outline-none focus:border-pine" value={summary} onChange={(e) => setSummary(e.target.value)} aria-label="Day plan" />
+        <input className="w-full rounded-xl border border-line px-3 py-2 text-base font-semibold outline-none focus:border-pine" value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Day title" />
+        <textarea rows={3} className="w-full rounded-xl border border-line px-3 py-2 text-base outline-none focus:border-pine" value={summary} onChange={(e) => setSummary(e.target.value)} aria-label="Day plan" />
         <div className="flex gap-2">
           <button type="button" className="rounded-full bg-pine px-3 py-1.5 text-xs font-semibold text-cream" onClick={() => { ed.saveDay(d, title.trim() || d.title, summary.trim()); setOpen(false) }}>
             Save
@@ -164,7 +164,7 @@ function AddPlace({ stopId, name, ed }: { stopId: string; name: string; ed: Plan
         setValue('')
       }}
     >
-      <input className="min-w-0 flex-1 rounded-xl border border-line bg-white px-3 py-2 text-sm outline-none focus:border-pine" placeholder={`Add your own place in ${name}`} value={value} onChange={(e) => setValue(e.target.value)} />
+      <input className="min-w-0 flex-1 rounded-xl border border-line bg-white px-3 py-2 text-base outline-none focus:border-pine" placeholder={`Add your own place in ${name}`} value={value} onChange={(e) => setValue(e.target.value)} />
       <button className="rounded-xl bg-pine px-3 py-2 text-sm font-semibold text-cream">Add</button>
     </form>
   )
@@ -320,7 +320,7 @@ function BudgetCard({ budget, style }: { budget: Budget; style: string }) {
         </span>
       </div>
       <p className="mt-3 text-xs leading-relaxed text-muted">
-        Estimated from typical prices for this style, not live fares or hotel rates. Shopping and adventure activities are extra.
+        Rough estimate. {budget.basis} Shopping and paid adventure activities are extra.
       </p>
     </section>
   )
@@ -335,9 +335,12 @@ interface Props {
   onEdit: () => void
   onExtend: (returnDate: string) => void
   onNew: () => void
+  saved: boolean
+  saveFailed: boolean
+  onSave: () => void
 }
 
-export function PlanView({ plan, loading, editor: ed, onToggleEdit, shareUrl, onEdit, onExtend, onNew }: Props) {
+export function PlanView({ plan, loading, editor: ed, onToggleEdit, shareUrl, onEdit, onExtend, onNew, saved, saveFailed, onSave }: Props) {
   const text = (section: ShareSection = 'all') => planToText(plan, ed.edits, section)
   const input = plan.input
   const home = plan.inbound.to
@@ -381,6 +384,13 @@ export function PlanView({ plan, loading, editor: ed, onToggleEdit, shareUrl, on
           </button>
           <button onClick={onEdit} className="rounded-full border border-cream/30 px-4 py-2 text-sm text-cream hover:bg-cream/10">Change trip details</button>
           <button onClick={onNew} className="rounded-full border border-cream/30 px-4 py-2 text-sm text-cream hover:bg-cream/10">New trip</button>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button onClick={onSave} disabled={saved} className="rounded-full border border-cream/30 px-4 py-2 text-sm text-cream hover:bg-cream/10 disabled:opacity-80">
+            {saved ? '✓ Saved on this phone' : 'Save for offline'}
+          </button>
+          {saveFailed && <span className="text-xs text-cream/80">Couldn't save: this browser blocked storage.</span>}
+          {saved && <span className="text-xs text-cream/60">Opens without internet. Edits update the saved copy.</span>}
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           <CopyButton text={() => text()} label="Copy plan" className="rounded-full bg-cream px-4 py-2 text-sm font-semibold text-pine hover:bg-white" />

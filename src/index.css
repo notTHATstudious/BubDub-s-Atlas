@@ -5,3 +5,14 @@
 body {
   @apply bg-cream text-ink antialiased;
 }
+
+/* No double-tap zoom delay on buttons and links. */
+html {
+  touch-action: manipulation;
+}
+
+/* Installed app: no pinch zoom either. */
+html.installed,
+html.installed body {
+  touch-action: pan-x pan-y;
+}

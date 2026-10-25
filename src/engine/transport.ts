@@ -45,7 +45,8 @@ const PER_KM: Record<Mode, Record<TravelStyle, [number, number]>> = {
   car: { budget: [12, 15], balanced: [13, 17], premium: [16, 22] },
   flight: { budget: [0, 0], balanced: [0, 0], premium: [0, 0] },
 }
-const MIN_FARE: Record<Mode, number> = { train: 200, bus: 300, car: 1500, flight: 3000 }
+// Short hops are cheap: a local or passenger train is tens of rupees, a state bus about ₹100.
+const MIN_FARE: Record<Mode, number> = { train: 50, bus: 100, car: 1200, flight: 2500 }
 /** Last-mile road speed used to turn hours back into km. */
 const LAST_MILE_KMPH = 40
 const TAXI_PER_KM: [number, number] = [14, 20]

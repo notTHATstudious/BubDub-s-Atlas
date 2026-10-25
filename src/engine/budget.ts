@@ -1,8 +1,21 @@
+import type { PlaceKind } from '../data/types'
 import type { TravelStyle } from './journey'
 import type { TransportOption } from './transport'
 
 // A rough trip budget in ₹ from typical Indian prices. It's a planning aid,
 // not a quote: every line is a range, and the page labels it as an estimate.
+//
+// Basis (typical 2025–26 ranges, not live prices):
+// - Getting there: per-km fares in transport.ts (IRCTC sleeper/3A/2A and
+//   state bus fare levels, typical domestic economy fares, cab per-km rates).
+// - Stays: common room rates on hotel listing sites for each style, two
+//   people to a room.
+// - Food: local eateries (Budget), casual restaurants (Balanced), hotel and
+//   café dining (Premium).
+// - Local travel: autos and shared jeeps (Budget), autos or an app cab for the
+//   actual outing distance (Balanced), a private cab with driver (Premium).
+// - Entry fees: ASI monuments ₹25–40 for Indian visitors, temples usually
+//   free, museums and private palaces up to a few hundred, activities more.
 
 export interface BudgetLine {
   label: string
@@ -15,31 +28,69 @@ export interface Budget {
   total: [number, number]
   perPerson: [number, number]
   travellers: number
+  /** One line on where the figures come from, for the page. */
+  basis: string
 }
 
 /** Per room per night: two people share a room. */
-const STAY: Record<TravelStyle, [number, number]> = { budget: [900, 1800], balanced: [2200, 4500], premium: [6000, 12000] }
-/** Per person per day. */
-const FOOD: Record<TravelStyle, [number, number]> = { budget: [500, 900], balanced: [1000, 1700], premium: [2200, 4000] }
-/** Getting around on a sightseeing day: per person when budget (buses, shared jeeps), per car otherwise. */
-const LOCAL: Record<TravelStyle, [number, number]> = { budget: [300, 700], balanced: [2500, 3500], premium: [3500, 5500] }
-/** Entry tickets, activities and small extras, per person per sightseeing day. */
-const EXTRAS: Record<TravelStyle, [number, number]> = { budget: [100, 300], balanced: [300, 700], premium: [700, 1500] }
+const STAY: Record<TravelStyle, [number, number]> = { budget: [800, 1500], balanced: [2000, 3500], premium: [5000, 10000] }
+/** Per person per full day. */
+const FOOD: Record<TravelStyle, [number, number]> = { budget: [400, 700], balanced: [600, 1200], premium: [1500, 3000] }
+/** Getting around on outings. Budget: per person per km (shared autos, buses). Others: per vehicle per km. */
+const LOCAL_PER_KM: Record<TravelStyle, [number, number]> = { budget: [2, 4], balanced: [15, 22], premium: [20, 28] }
+/** Minimum local spend for a day out: per person (Budget) or per vehicle. */
+const LOCAL_MIN: Record<TravelStyle, [number, number]> = { budget: [50, 100], balanced: [300, 500], premium: [1500, 2500] }
+/** In-town hops on top of the outing distance. */
+const IN_TOWN_KM = 6
+const LOCAL_KMPH = 30
 const ROAD_KMPH = 40
 const BUS_PER_KM: [number, number] = [1.2, 2]
 const CAB_PER_KM: [number, number] = [14, 19]
 
-const round = (n: number) => Math.round(n / 500) * 500
+/** Typical entry fee per person, ₹. */
+const ENTRY: Record<PlaceKind, [number, number]> = {
+  viewpoint: [0, 50],
+  fort: [25, 100],
+  caves: [25, 100],
+  lake: [0, 50],
+  waterfall: [0, 50],
+  village: [0, 0],
+  monastery: [0, 50],
+  temple: [0, 0],
+  church: [0, 0],
+  valley: [0, 100],
+  pass: [0, 0],
+  market: [0, 0],
+  cafes: [0, 0],
+  beach: [0, 0],
+  trek: [0, 200],
+  activity: [300, 1500],
+  palace: [50, 300],
+  museum: [20, 150],
+  garden: [10, 50],
+  heritage: [25, 100],
+  wildlife: [100, 500],
+}
+
+const round = (n: number) => Math.round(n / 100) * 100
 const mul = (r: [number, number], k: number): [number, number] => [r[0] * k, r[1] * k]
 const add = (a: [number, number], b: [number, number]): [number, number] => [a[0] + b[0], a[1] + b[1]]
+
+export interface Outing {
+  /** Furthest place from the stay, in hours by road. */
+  farthestHours: number
+  /** Kinds of the places visited, for entry fees. */
+  kinds: PlaceKind[]
+}
 
 export interface BudgetInput {
   style: TravelStyle
   travellers: number
   nights: number
-  days: number
-  /** Days with sightseeing at a destination. */
-  outingDays: number
+  /** Days counted for meals: travel, arrival and return days count partly. */
+  foodDays: number
+  /** One entry per day with sightseeing. */
+  outings: Outing[]
   /** Road hours between stops. */
   transferHours: number
   outbound?: TransportOption
@@ -52,7 +103,7 @@ function legCost(o: TransportOption | undefined, travellers: number, cars: numbe
 }
 
 export function estimateBudget(b: BudgetInput): Budget {
-  const n = Math.max(1, b.travellers)
+  const n = Math.max(1, Math.round(b.travellers))
   const rooms = Math.ceil(n / 2)
   const cars = Math.ceil(n / 4)
   const lines: BudgetLine[] = []
@@ -71,15 +122,34 @@ export function estimateBudget(b: BudgetInput): Budget {
   if (b.nights > 0) {
     lines.push({ label: 'Stays', detail: `${b.nights} ${b.nights === 1 ? 'night' : 'nights'}, ${rooms} ${rooms === 1 ? 'room' : 'rooms'}`, range: mul(STAY[b.style], b.nights * rooms) })
   }
-  lines.push({ label: 'Food', detail: `${b.days} ${b.days === 1 ? 'day' : 'days'}`, range: mul(FOOD[b.style], b.days * n) })
-  if (b.outingDays > 0) {
-    const local = b.style === 'budget' ? mul(LOCAL.budget, b.outingDays * n) : mul(LOCAL[b.style], b.outingDays * cars)
-    lines.push({ label: 'Local travel and entry fees', detail: `${b.outingDays} sightseeing ${b.outingDays === 1 ? 'day' : 'days'}`, range: add(local, mul(EXTRAS[b.style], b.outingDays * n)) })
+  if (b.foodDays > 0) {
+    lines.push({ label: 'Food', detail: `${n} ${n === 1 ? 'person' : 'people'}`, range: mul(FOOD[b.style], b.foodDays * n) })
+  }
+  if (b.outings.length > 0) {
+    let local: [number, number] = [0, 0]
+    let fees: [number, number] = [0, 0]
+    for (const o of b.outings) {
+      const km = 2 * o.farthestHours * LOCAL_KMPH + IN_TOWN_KM
+      const per = mul(LOCAL_PER_KM[b.style], km)
+      const min = LOCAL_MIN[b.style]
+      const day: [number, number] = [Math.max(per[0], min[0]), Math.max(per[1], min[1])]
+      local = add(local, b.style === 'budget' ? mul(day, n) : mul(day, cars))
+      for (const k of o.kinds) fees = add(fees, mul(ENTRY[k], n))
+    }
+    const how = b.style === 'budget' ? 'autos, shared jeeps' : b.style === 'balanced' ? 'autos or a cab' : 'private cab'
+    lines.push({ label: 'Local travel', detail: `${b.outings.length} ${b.outings.length === 1 ? 'day' : 'days'} out, ${how}`, range: local })
+    if (fees[1] > 0) lines.push({ label: 'Entry fees and activities', detail: 'tickets where places charge', range: fees })
   }
 
   const rounded = lines.map((l) => ({ ...l, range: [round(l.range[0]), round(l.range[1])] as [number, number] }))
   const total = rounded.reduce<[number, number]>((s, l) => add(s, l.range), [0, 0])
-  return { lines: rounded, total, perPerson: [round(total[0] / n), round(total[1] / n)], travellers: n }
+  return {
+    lines: rounded,
+    total,
+    perPerson: [round(total[0] / n), round(total[1] / n)],
+    travellers: n,
+    basis: 'Based on typical rail, bus and cab fares, hotel listing rates for this style, local food prices and standard entry fees. Not live prices.',
+  }
 }
 
 export function formatRupees(n: number): string {
