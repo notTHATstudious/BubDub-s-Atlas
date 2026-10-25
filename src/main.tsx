@@ -5,7 +5,7 @@ import App from './App.tsx'
 
 // In the installed app (Android APK or home-screen app) pinch and double-tap
 // zoom feel broken, so turn them off there. The website keeps normal zoom.
-const installed = window.matchMedia('(display-mode: standalone)').matches || document.referrer.startsWith('android-app://')
+const installed = window.matchMedia('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true || document.referrer.startsWith('android-app://')
 if (installed) {
   document.querySelector('meta[name="viewport"]')?.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no')
   document.documentElement.classList.add('installed')

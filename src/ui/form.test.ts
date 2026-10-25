@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { findOrigin } from '../engine/geo'
 import { deleteTrip, listTrips, rememberPlaces, saveTrip } from './store'
+import { installKind } from './install'
 import { resolveOffline, PlanError } from './lookup'
 import { emptyForm, parseTravellers, toInput } from './form'
 
@@ -63,5 +64,18 @@ describe('remembered places and saved trips', () => {
     expect(listTrips().map((t) => t.label)).toEqual(['Goa again'])
     deleteTrip('a')
     expect(listTrips()).toEqual([])
+  })
+})
+
+describe('install hint', () => {
+  const base = { platform: 'Linux armv8l', maxTouchPoints: 5, standalone: false }
+  it('tells iPhones, iPads and Android apart', () => {
+    expect(installKind({ ...base, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)' })).toBe('ios')
+    expect(installKind({ ...base, platform: 'MacIntel', userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)' })).toBe('ios')
+    expect(installKind({ ...base, userAgent: 'Mozilla/5.0 (Linux; Android 13)' })).toBe('android')
+    expect(installKind({ ...base, platform: 'MacIntel', maxTouchPoints: 0, userAgent: 'Mozilla/5.0 (Macintosh)' })).toBe('none')
+  })
+  it('stays quiet once installed', () => {
+    expect(installKind({ ...base, standalone: true, userAgent: 'iPhone' })).toBe('none')
   })
 })

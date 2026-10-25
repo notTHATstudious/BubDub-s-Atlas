@@ -4,6 +4,7 @@ import type { LiveResolved } from './live'
 import { lookUpTrip, PlanError } from './ui/lookup'
 import { emptyForm, loadForm, pickedPlaces, readShareLink, saveForm, shareLink, toInput, type FormState } from './ui/form'
 import { formatDate } from './engine/dates'
+import { InstallHint } from './ui/InstallHint'
 import { SavedTrips } from './ui/SavedTrips'
 import { newTripId, saveTrip, type SavedTrip } from './ui/store'
 import { PlanView, type PlanEditor } from './ui/PlanView'
@@ -191,6 +192,7 @@ export default function App() {
           />
         ) : (
           <>
+            <InstallHint />
             {loading && shared ? (
               <p className="rounded-3xl border border-line bg-white/70 p-6 text-center text-sm text-muted">Loading the shared trip…</p>
             ) : (
