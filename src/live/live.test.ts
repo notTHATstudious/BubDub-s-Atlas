@@ -5,6 +5,7 @@ import type { Destination } from '../data/types'
 import { parsePhoton } from './geocode'
 import { parseAccess, parsePlaces, type OsmElement } from './places'
 import { parseGeoSearch } from './wikipedia'
+import { nearestListedStation } from './resolve'
 
 const hampi = { lat: 15.335, lon: 76.46 }
 
@@ -54,6 +55,15 @@ describe('live data parsing', () => {
     expect(access.connectingFlightLikely).toBe(true)
   })
 
+  it('uses a station without a Wikidata link, but prefers a junction that is only a little further', () => {
+    const small = { type: 'node' as const, id: 20, lat: 15.2689, lon: 76.3909, tags: { railway: 'station', name: 'Small Road' } }
+    expect(parseAccess([small], hampi).railhead?.name).toBe('Small Road')
+    const junction = { type: 'node' as const, id: 21, lat: 15.2689 + 0.1, lon: 76.3909, tags: { railway: 'station', name: 'Big Junction', wikidata: 'Q9' } }
+    expect(parseAccess([small, junction], hampi).railhead?.name).toBe('Big Junction')
+    const farJunction = { ...junction, lat: 15.2689 + 0.5 }
+    expect(parseAccess([small, farJunction], hampi).railhead?.name).toBe('Small Road')
+  })
+
   it('filters Wikipedia hits that are not attractions', () => {
     const places = parseGeoSearch(
       [
@@ -88,5 +98,15 @@ describe('live data parsing', () => {
     )
     expect(p.outbound.estimate?.mode).toMatch(/train|bus/)
     expect(p.days.flatMap((d) => d.stops).some((s) => s.name === 'Virupaksha Temple')).toBe(true)
+  })
+})
+
+describe('built-in station list', () => {
+  it('finds a railhead for hill towns and junction cities when the live lookup has none', () => {
+    const kodai = nearestListedStation({ lat: 10.2381, lon: 77.4892 })
+    expect(kodai?.name).toMatch(/Kodaikanal Road|Palani/)
+    expect(kodai!.roadHours).toBeLessThanOrEqual(2.5)
+    expect(nearestListedStation({ lat: 20.7002, lon: 77.0082 })?.name).toBe('Akola Junction')
+    expect(nearestListedStation({ lat: 34.2, lon: 77.6 })).toBeUndefined()
   })
 })

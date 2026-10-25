@@ -74,7 +74,9 @@ export function unavailableReason(from: Coords | undefined, fromName: string, de
   const air = straightKm(from, dest.coords)
   switch (mode) {
     case 'train':
-      return `we don't know a useful railway station near ${dest.name}`
+      return dest.access.lookupFailed
+        ? `the railway station lookup didn't answer just now (try planning again in a minute)`
+        : `we don't know a useful railway station near ${dest.name}`
     case 'bus':
       return `it's about ${km.toLocaleString('en-IN')} km by road, too far for a bus to make sense`
     case 'car':

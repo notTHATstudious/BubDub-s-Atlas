@@ -91,7 +91,9 @@ export default function App() {
       const isOnline = navigator.onLine
       const key = placesKey(f, isOnline)
       if (resolved.current?.key !== key) {
-        resolved.current = { key, data: await lookUpTrip(toInput(f), pickedPlaces(f), isOnline) }
+        const data = await lookUpTrip(toInput(f), pickedPlaces(f), isOnline)
+        // A lookup that half-failed is used now but never matches again, so planning again retries it.
+        resolved.current = { key: data.stops.some((s) => s.access.lookupFailed) ? `${key}!${Date.now()}` : key, data }
       }
       setPlan(build(f, resolved.current.data))
       top.current?.scrollIntoView({ behavior: 'smooth' })

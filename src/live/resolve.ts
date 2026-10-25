@@ -1,7 +1,9 @@
-import type { Destination } from '../data/types'
+import type { AccessInfo, Coords, Destination } from '../data/types'
 import { findDestination, findOrigin, type Origin } from '../engine/geo'
 import { placeholderDestination } from '../engine/resolve'
 import type { Notice, ResolvedTrip, TripInput } from '../engine/types'
+import { STATIONS } from '../data/stations'
+import { roadKm, straightKm } from '../engine/geo'
 import { elevation } from './elevation'
 import { geocode, type GeoResult } from './geocode'
 import { fetchAccess, fetchNearbyPlaces } from './places'
@@ -17,6 +19,24 @@ export interface LiveResolved extends ResolvedTrip {
 
 function slug(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
+/** Nearest station in the built-in list, for when the map lookup failed or found none. */
+export function nearestListedStation(c: Coords, maxKm = 150): NonNullable<AccessInfo['railhead']> | undefined {
+  let best: { name: string; km: number } | undefined
+  for (const s of STATIONS) {
+    const km = straightKm(c, s.coords)
+    if (km <= maxKm && (!best || km < best.km)) best = { name: s.name, km }
+  }
+  if (!best) return undefined
+  const near = STATIONS.find((s) => s.name === best.name)!
+  return { name: best.name, roadHours: Math.max(0.25, Math.round((roadKm(c, near.coords) / 40) * 2) / 2) }
+}
+
+function withFallbackStation(access: AccessInfo, c: Coords): AccessInfo {
+  if (access.railhead) return access
+  const railhead = nearestListedStation(c)
+  return railhead ? { ...access, railhead } : access
 }
 
 export async function buildLiveDestination(geo: GeoResult): Promise<{ dest: Destination; notices: Notice[] }> {
@@ -54,7 +74,7 @@ export async function buildLiveDestination(geo: GeoResult): Promise<{ dest: Dest
     minNights: 1,
     idealNights: Math.min(4, Math.max(1, Math.round(highlights / 4))),
     bestMonths: [],
-    access: accessRes.status === 'fulfilled' ? accessRes.value : {},
+    access: withFallbackStation(accessRes.status === 'fulfilled' ? accessRes.value : { lookupFailed: true }, geo.coords),
     clusters,
     places,
   }

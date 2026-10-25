@@ -41,14 +41,21 @@ export function placesQuery(c: Coords, radiusKm = PLACES_RADIUS_KM): string {
 out center tags 300;`
 }
 
-export function accessQuery(c: Coords): string {
+export function airportQuery(c: Coords): string {
   return `[out:json][timeout:25];
-(
-  nwr(around:250000,${c.lat},${c.lon})["aeroway"="aerodrome"]["iata"];
-  node(around:60000,${c.lat},${c.lon})["railway"="station"]["name"]["wikidata"];
-);
+nwr(around:250000,${c.lat},${c.lon})["aeroway"="aerodrome"]["iata"];
+out center tags 40;`
+}
+
+/** Passenger stations within reach by road. Small towns are often tagged without a Wikidata link, so none is required. */
+export function stationQuery(c: Coords): string {
+  return `[out:json][timeout:25];
+nwr(around:${STATION_RADIUS_KM * 1000},${c.lat},${c.lon})["railway"="station"]["name"]["station"!~"^(subway|light_rail|monorail|tram|funicular)$"]["usage"!="tourism"];
 out center tags 80;`
 }
+
+/** Furthest station we'll call a railhead, straight-line. */
+export const STATION_RADIUS_KM = 100
 
 async function overpass(query: string): Promise<OsmElement[]> {
   let lastError: unknown
@@ -182,7 +189,12 @@ export function parseAccess(elements: OsmElement[], base: Coords): AccessInfo {
     .map((x) => ({ ...x, km: roadKm(base, x.c) }))
     .sort((a, b) => a.km - b.km)
   const airport = withCoords.find((x) => x.e.tags?.aeroway === 'aerodrome')
-  const station = withCoords.find((x) => x.e.tags?.railway === 'station')
+  // Nearest station, unless a notable one (Wikidata-listed: a junction or major stop, with more trains)
+  // is only a little further.
+  const stations = withCoords.filter((x) => x.e.tags?.railway === 'station')
+  const nearest = stations[0]
+  const notable = stations.find((x) => x.e.tags?.wikidata)
+  const station = nearest && notable && notable.km - nearest.km <= 25 ? notable : nearest
   const hours = (km: number) => Math.max(0.25, Math.round((km / 40) * 2) / 2)
   return {
     airport: airport
@@ -198,6 +210,10 @@ export async function fetchNearbyPlaces(base: Coords): Promise<LivePlaces> {
   return parsePlaces(await overpass(placesQuery(base)), base)
 }
 
+/** Airports and stations are looked up separately, so one slow query doesn't lose the other. */
 export async function fetchAccess(base: Coords): Promise<AccessInfo> {
-  return parseAccess(await overpass(accessQuery(base)), base)
+  const [airports, stations] = await Promise.allSettled([overpass(airportQuery(base)), overpass(stationQuery(base))])
+  if (airports.status === 'rejected' && stations.status === 'rejected') throw airports.reason
+  const access = parseAccess([...(airports.status === 'fulfilled' ? airports.value : []), ...(stations.status === 'fulfilled' ? stations.value : [])], base)
+  return airports.status === 'rejected' || stations.status === 'rejected' ? { ...access, lookupFailed: true } : access
 }

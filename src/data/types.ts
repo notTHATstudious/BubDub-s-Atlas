@@ -106,6 +106,8 @@ export interface AccessInfo {
   roadPenaltyHours?: number
   /** Most far-away flights need a connection (small or no airport). */
   connectingFlightLikely?: boolean
+  /** The airport/station lookup didn't answer, so missing entries mean "unknown", not "none". */
+  lookupFailed?: boolean
   note?: string
 }
 
