@@ -10,7 +10,7 @@ import { SavedTrips } from './ui/SavedTrips'
 import { newTripId, saveTrip, type SavedTrip } from './ui/store'
 import { PlanView, type PlanEditor } from './ui/PlanView'
 import { TripForm } from './ui/TripForm'
-import { readWeyvoLink, weyvoStoryLink } from './ui/weyvo'
+import { readWeyvoLink, weyvoStoryLink, WEYVO_URL } from './ui/weyvo'
 import { ByWeyvo, WeyvoBar, WeyvoInvite } from './ui/WeyvoBits'
 
 const shared = readShareLink(location.hash)
@@ -231,7 +231,7 @@ export default function App() {
         )}
       </main>
       <footer className="border-t border-line py-6 text-center text-xs text-muted">
-        © {YEAR} Maheeesh. Somewhere starts here.
+        © {YEAR} <a href={WEYVO_URL} className="font-semibold text-ink hover:underline">Weyvo</a>. BubDub's Atlas is Weyvo's trip planner. Somewhere starts here.
       </footer>
     </div>
   )
