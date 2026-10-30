@@ -3,8 +3,10 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { applyTheme, resolveTheme, savedChoice } from './ui/theme'
+import { EMBED } from './ui/weyvo'
 
-applyTheme(resolveTheme(savedChoice()))
+// Inside Weyvo the colours follow Weyvo's light or dark theme, without changing the saved choice.
+applyTheme(EMBED.on && EMBED.theme ? EMBED.theme : resolveTheme(savedChoice()))
 
 // In the installed app (Android APK or home-screen app) pinch and double-tap
 // zoom feel broken, so turn them off there. The website keeps normal zoom.

@@ -401,7 +401,7 @@ export function PlanView({ plan, loading, editor: ed, onToggleEdit, shareUrl, we
           </a>
           <CopyButton text={shareUrl} label="Copy link" className="rounded-full border border-cream/30 px-4 py-2 text-sm text-cream hover:bg-cream/10" />
         </div>
-        <a href={weyvoUrl()} className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-cream/10 px-4 py-3 text-sm text-cream hover:bg-cream/15">
+        <a href={weyvoUrl()} target="_top" className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-cream/10 px-4 py-3 text-sm text-cream hover:bg-cream/15">
           <span>
             <span className="block font-semibold">Write this trip on Weyvo</span>
             <span className="block text-xs text-cream/70">Back from it? Your days become a travel story; add photos and your words.</span>

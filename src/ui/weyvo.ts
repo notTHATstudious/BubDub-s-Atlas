@@ -7,9 +7,32 @@ import { emptyForm, type FormState } from './form'
 
 export const WEYVO_URL = 'https://weyvo-web.onrender.com'
 const BACK_KEY = 'tp-weyvo-back'
+const EMBED_KEY = 'tp-embed'
+
+/**
+ * Inside Weyvo's Plan tab (?embed=weyvo, in a frame), Atlas shows only the planner and its results:
+ * Weyvo already shows the name, the way back and the bottom bar. Remembered for reloads of the frame.
+ */
+function detectEmbed(): { on: boolean; theme?: 'light' | 'dark' } {
+  const q = new URLSearchParams(location.search)
+  let on = q.get('embed') === 'weyvo'
+  const t = q.get('theme')
+  try {
+    if (on) sessionStorage.setItem(EMBED_KEY, t === 'dark' || t === 'light' ? t : '1')
+    const saved = sessionStorage.getItem(EMBED_KEY)
+    on = on || (!!saved && window.self !== window.top)
+    const theme = (t === 'dark' || t === 'light' ? t : saved) as string | null
+    return { on, theme: theme === 'dark' || theme === 'light' ? theme : undefined }
+  } catch {
+    return { on, theme: t === 'dark' || t === 'light' ? t : undefined }
+  }
+}
+
+export const EMBED = detectEmbed()
 
 /** Where "Back to Weyvo" goes for this visit, or undefined when Atlas wasn't opened from Weyvo. */
 export function weyvoBack(): string | undefined {
+  if (EMBED.on) return undefined
   try {
     const path = sessionStorage.getItem(BACK_KEY)
     return path ? WEYVO_URL + path : undefined
