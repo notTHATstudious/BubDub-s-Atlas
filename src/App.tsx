@@ -83,6 +83,11 @@ export default function App() {
 
   useEffect(() => saveForm(form), [form])
 
+  // Inside Weyvo: tell the Plan tab a plan is ready (no trip details), so it can offer to install Atlas.
+  useEffect(() => {
+    if (EMBED.on && plan && window.parent !== window) window.parent.postMessage({ type: 'atlas:planned' }, '*')
+  }, [plan])
+
   function build(f: FormState, data: LiveResolved): TripPlan {
     const p = planTrip(toInput(f), data)
     p.warnings.unshift(...data.notices)
