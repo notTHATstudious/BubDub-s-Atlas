@@ -2,8 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Light and dark colours, as "r, g, b" for tailwind.config.js. */
+:root {
+  --page: 244, 238, 233;
+  --card: 255, 255, 255;
+  --ink: 42, 52, 51;
+  --muted: 108, 116, 114;
+  --line: 226, 215, 207;
+  --sand: 218, 204, 196;
+}
+
+/* Dark mode: warm espresso with gold accents. */
+html.dark {
+  color-scheme: dark;
+  --page: 20, 17, 15;
+  --card: 31, 27, 24;
+  --ink: 236, 226, 214;
+  --muted: 168, 157, 146;
+  --line: 54, 47, 42;
+  --sand: 61, 53, 47;
+}
+
+/* Pine buttons and badges turn gold, with espresso text. */
+html.dark .bg-pine {
+  background-color: #d9b26a;
+  color: #1c1713;
+}
+html.dark .hover\:bg-pine\/90:hover {
+  background-color: #e4c385;
+}
+/* The big pine panels (trip header, budget total) become a warm dark panel with a gold edge. */
+html.dark .panel {
+  background-color: #2a231e;
+  color: #ece2d6;
+  box-shadow: inset 0 0 0 1px rgba(217, 178, 106, 0.28);
+}
+html.dark .copy-plan.copy-plan {
+  background-color: #d9b26a;
+  color: #1c1713;
+}
+html.dark .bg-pine\/10 {
+  background-color: rgba(217, 178, 106, 0.12);
+}
+html.dark .bg-pine\/5,
+html.dark .hover\:bg-pine\/5:hover {
+  background-color: rgba(217, 178, 106, 0.07);
+}
+
+/* Pine and navy text, and pine borders, become gold. */
+html.dark .text-pine,
+html.dark .hover\:text-pine:hover,
+html.dark .text-navy {
+  color: #dfbd7c;
+}
+html.dark .border-pine,
+html.dark .focus\:border-pine:focus,
+html.dark .focus-within\:border-pine:focus-within,
+html.dark .hover\:border-pine:hover {
+  border-color: #b8955a;
+}
+html.dark .border-pine\/30,
+html.dark .border-pine\/40,
+html.dark .border-pine\/50,
+html.dark .hover\:border-pine\/40:hover {
+  border-color: rgba(217, 178, 106, 0.4);
+}
+
 body {
-  @apply bg-cream text-ink antialiased;
+  @apply bg-page text-ink antialiased;
 }
 
 /* No double-tap zoom delay on buttons and links. */

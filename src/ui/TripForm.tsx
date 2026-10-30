@@ -154,7 +154,7 @@ export function TripForm({ value: f, onChange, onSubmit, loading }: Props) {
           More options <span className="hidden font-normal sm:inline">(travellers, transport, interests, notes)</span>
         </button>
         {more && (
-          <div className="mt-4 space-y-4 rounded-2xl bg-cream/70 p-4">
+          <div className="mt-4 space-y-4 rounded-2xl bg-page/70 p-4">
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Travellers">
                 <TravellersInput value={f.travellers} onChange={(travellers) => set({ travellers })} />

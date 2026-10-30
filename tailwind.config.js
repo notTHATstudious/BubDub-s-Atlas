@@ -6,13 +6,17 @@ export default {
   theme: {
     extend: {
       // Green and beige: #374F4F (pine) and #DACCC4 (sand).
+      // page, white, ink, muted, line and sand switch for dark mode (variables in src/index.css).
+      // rgba(var(), alpha) rather than rgb(... / alpha) so older phone browsers still read it.
       colors: {
+        page: 'rgba(var(--page), <alpha-value>)',
+        white: 'rgba(var(--card), <alpha-value>)',
         cream: '#f4eee9',
-        sand: '#daccc4',
+        sand: 'rgba(var(--sand), <alpha-value>)',
         pine: '#374f4f',
-        ink: '#2a3433',
-        muted: '#6c7472',
-        line: '#e2d7cf',
+        ink: 'rgba(var(--ink), <alpha-value>)',
+        muted: 'rgba(var(--muted), <alpha-value>)',
+        line: 'rgba(var(--line), <alpha-value>)',
         sage: '#6f8f86',
         sky: '#9fb6b4',
         sun: '#d9b26a',

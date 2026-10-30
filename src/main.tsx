@@ -2,6 +2,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { applyTheme, resolveTheme, savedChoice } from './ui/theme'
+
+applyTheme(resolveTheme(savedChoice()))
 
 // In the installed app (Android APK or home-screen app) pinch and double-tap
 // zoom feel broken, so turn them off there. The website keeps normal zoom.

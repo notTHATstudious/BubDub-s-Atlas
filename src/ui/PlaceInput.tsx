@@ -103,7 +103,7 @@ export function PlaceInput({ label, value, onChange, known, placeholder, autoFoc
             }}
           />
           {onRemove && (
-            <button type="button" onClick={onRemove} aria-label={`Remove ${value || 'stop'}`} className="mr-1 rounded-lg px-2 py-1 text-lg leading-none text-muted hover:bg-cream hover:text-clay">
+            <button type="button" onClick={onRemove} aria-label={`Remove ${value || 'stop'}`} className="mr-1 rounded-lg px-2 py-1 text-lg leading-none text-muted hover:bg-page hover:text-clay">
               ×
             </button>
           )}
@@ -120,7 +120,7 @@ export function PlaceInput({ label, value, onChange, known, placeholder, autoFoc
                 e.preventDefault()
                 pick(s)
               }}
-              className={`cursor-pointer px-3 py-2 text-sm ${i === active ? 'bg-sage/10' : 'hover:bg-cream'}`}
+              className={`cursor-pointer px-3 py-2 text-sm ${i === active ? 'bg-sage/10' : 'hover:bg-page'}`}
             >
               <span className="font-medium">{s.name}</span>
               {s.label ? <span className="ml-2 text-xs text-muted">{s.label}</span> : <span className="ml-2 text-xs text-sage">curated</span>}

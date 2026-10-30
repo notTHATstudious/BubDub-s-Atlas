@@ -312,7 +312,7 @@ function BudgetCard({ budget, style }: { budget: Budget; style: string }) {
           </li>
         ))}
       </ul>
-      <div className="mt-3 flex items-end justify-between gap-3 rounded-2xl bg-pine px-4 py-3 text-cream">
+      <div className="mt-3 flex items-end justify-between gap-3 panel rounded-2xl bg-pine px-4 py-3 text-cream">
         <span className="text-sm">Total</span>
         <span className="text-right">
           <span className="block text-lg font-semibold tabular-nums">{r(budget.total)}</span>
@@ -354,7 +354,7 @@ export function PlanView({ plan, loading, editor: ed, onToggleEdit, shareUrl, on
 
   return (
     <div className="space-y-6">
-      <header className="rounded-3xl bg-pine px-6 py-7 text-cream sm:px-8">
+      <header className="panel rounded-3xl bg-pine px-6 py-7 text-cream sm:px-8">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-cream/60">Your trip</p>
         <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
           {heading} <span className="font-normal text-cream/60">from {plan.outbound.from}</span>
@@ -393,8 +393,8 @@ export function PlanView({ plan, loading, editor: ed, onToggleEdit, shareUrl, on
           {saved && <span className="text-xs text-cream/60">Opens without internet. Edits update the saved copy.</span>}
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          <CopyButton text={() => text()} label="Copy plan" className="rounded-full bg-cream px-4 py-2 text-sm font-semibold text-pine hover:bg-white" />
-          <a href={whatsappLink(text())} target="_blank" rel="noreferrer" className="rounded-full bg-[#25D366] px-4 py-2 text-sm font-semibold text-white hover:opacity-90">
+          <CopyButton text={() => text()} label="Copy plan" className="rounded-full bg-cream px-4 py-2 text-sm font-semibold text-pine hover:bg-white copy-plan" />
+          <a href={whatsappLink(text())} target="_blank" rel="noreferrer" className="rounded-full bg-[#25D366] px-4 py-2 text-sm font-semibold text-[#fff] hover:opacity-90">
             Share on WhatsApp
           </a>
           <CopyButton text={shareUrl} label="Copy link" className="rounded-full border border-cream/30 px-4 py-2 text-sm text-cream hover:bg-cream/10" />

@@ -5,6 +5,7 @@ import { lookUpTrip, PlanError } from './ui/lookup'
 import { emptyForm, loadForm, pickedPlaces, readShareLink, saveForm, shareLink, toInput, type FormState } from './ui/form'
 import { formatDate } from './engine/dates'
 import { InstallHint } from './ui/InstallHint'
+import { SettingsMenu } from './ui/SettingsMenu'
 import { SavedTrips } from './ui/SavedTrips'
 import { newTripId, saveTrip, type SavedTrip } from './ui/store'
 import { PlanView, type PlanEditor } from './ui/PlanView'
@@ -153,7 +154,8 @@ export default function App() {
             <b>You're offline.</b> You can open your saved trips, or plan hand-checked places (like Lonavala, Manali or Goa) and places you've planned before. Search links need the internet.
           </p>
         )}
-        <header className="mb-7 text-center">
+        <header className="relative mb-7 px-12 text-center">
+          <SettingsMenu className="absolute right-0 top-0" />
           <h1 className="font-brand text-4xl leading-tight text-navy sm:text-5xl">BubDub's Atlas</h1>
           {!plan && <p className="mt-2 text-sm text-muted">A practical day-by-day trip plan for anywhere, in a few seconds.</p>}
         </header>
