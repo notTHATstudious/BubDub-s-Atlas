@@ -332,6 +332,8 @@ interface Props {
   editor: PlanEditor
   onToggleEdit: () => void
   shareUrl: () => string
+  /** Starts a Weyvo travel story from this plan. */
+  weyvoUrl: () => string
   onEdit: () => void
   onExtend: (returnDate: string) => void
   onNew: () => void
@@ -340,7 +342,7 @@ interface Props {
   onSave: () => void
 }
 
-export function PlanView({ plan, loading, editor: ed, onToggleEdit, shareUrl, onEdit, onExtend, onNew, saved, saveFailed, onSave }: Props) {
+export function PlanView({ plan, loading, editor: ed, onToggleEdit, shareUrl, weyvoUrl, onEdit, onExtend, onNew, saved, saveFailed, onSave }: Props) {
   const text = (section: ShareSection = 'all') => planToText(plan, ed.edits, section)
   const input = plan.input
   const home = plan.inbound.to
@@ -399,6 +401,13 @@ export function PlanView({ plan, loading, editor: ed, onToggleEdit, shareUrl, on
           </a>
           <CopyButton text={shareUrl} label="Copy link" className="rounded-full border border-cream/30 px-4 py-2 text-sm text-cream hover:bg-cream/10" />
         </div>
+        <a href={weyvoUrl()} className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-cream/10 px-4 py-3 text-sm text-cream hover:bg-cream/15">
+          <span>
+            <span className="block font-semibold">Write this trip on Weyvo</span>
+            <span className="block text-xs text-cream/70">Back from it? Your days become a travel story; add photos and your words.</span>
+          </span>
+          <span aria-hidden="true">→</span>
+        </a>
       </header>
 
       {plan.extendTo && (
