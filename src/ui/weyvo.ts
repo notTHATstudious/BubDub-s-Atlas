@@ -53,7 +53,8 @@ export function readWeyvoLink(search: string): { form: FormState; ready: boolean
   if (q.get('ref') !== 'weyvo') return undefined
   const back = q.get('back') ?? '/plan'
   try {
-    sessionStorage.setItem(BACK_KEY, back.startsWith('/') && !back.startsWith('//') ? back.slice(0, 200) : '/plan')
+    // A path on Weyvo only: '//site' and '/\\site' would mean another website.
+    sessionStorage.setItem(BACK_KEY, /^\/(?![\/\\])[^\\\s]*$/.test(back) ? back.slice(0, 200) : '/plan')
   } catch {
     // Without storage the bar just doesn't show.
   }
